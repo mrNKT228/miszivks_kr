@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
+import "./assets/styles/style.css";
 // PRIMEVUE
 import Aura from "@primeuix/themes/aura";
 import PrimeVue from "primevue/config";
