@@ -48,31 +48,37 @@ export default {
   }),
   methods: {
     test_inet() {
+      this.tests_result.inet = "running";
       inet().then((result) => {
         this.tests_result.inet = result;
       });
     },
     test_fw_installed() {
+      this.tests_result.fw_installed = "running";
       fw_installed().then((result) => {
         this.tests_result.fw_installed = result;
       });
     },
     test_fw_working() {
+      this.tests_result.fw_working = "running";
       fw_working().then((result) => {
         this.tests_result.fw_working = result;
       });
     },
     test_av_installed() {
+      this.tests_result.av_installed = "running";
       av_installed().then((result) => {
         this.tests_result.av_installed = result;
       });
     },
     test_av_working() {
+      this.tests_result.av_working = "running";
       av_working().then((result) => {
         this.tests_result.av_working = result;
       });
     },
     test_av_test() {
+      this.tests_result.av_test = "running";
       av_test().then((result) => {
         this.tests_result.av_test = result;
       });
