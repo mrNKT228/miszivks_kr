@@ -4,7 +4,7 @@ import "./assets/styles/style.css";
 // PRIMEVUE
 import Aura from "@primeuix/themes/aura";
 import PrimeVue from "primevue/config";
-import { Button } from "primevue";
+import { Button, ToggleSwitch } from "primevue";
 // -PRIMEVUE-
 
 const app = createApp(App);
@@ -16,6 +16,7 @@ app.use(PrimeVue, {
 
 // PRIMEVUE
 app.component("Button", Button);
+app.component("ToggleSwitch", ToggleSwitch);
 // -PRIMEVUE-
 
 app.mount("#app");

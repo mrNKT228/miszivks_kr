@@ -1,4 +1,5 @@
 <script lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import Test from "./components/Test.vue";
 import { T_TestReturnState } from "./layouts/test.layout";
 import {
@@ -9,16 +10,9 @@ import {
   fw_working,
   inet,
 } from "./tests";
+import { formatDate } from "./misc";
 
-// import { ref } from "vue";
-// import { invoke } from "@tauri-apps/api/core";
-
-// const greetMsg = ref("");
-// const name = ref("");
-
-// async function greet() {
-//   greetMsg.value = await invoke("greet", { name: name.value });
-// }
+type T_Log = { en_msg: string; ru_msg: string; timestamp: number }[];
 
 type T_DataLayout = {
   tests_result: {
@@ -29,6 +23,8 @@ type T_DataLayout = {
     av_working: T_TestReturnState;
     av_test: T_TestReturnState;
   };
+  log: T_Log;
+  russian_language: boolean;
 };
 
 export default {
@@ -45,6 +41,8 @@ export default {
       av_working: "not_checked_yet",
       av_test: "not_checked_yet",
     },
+    log: [],
+    russian_language: true,
   }),
   methods: {
     test_inet() {
@@ -83,6 +81,33 @@ export default {
         this.tests_result.av_test = result;
       });
     },
+
+    get_log() {
+      invoke("get_log").then((log) => {
+        console.log("Received log:", log);
+        this.log = log as T_Log;
+      });
+    },
+  },
+  computed: {
+    logByLanguage(): { msg: string; time: string }[] {
+      if (this.russian_language) {
+        return this.log.map((log_entry) => ({
+          msg: log_entry.ru_msg,
+          time: formatDate(new Date(log_entry.timestamp * 1000)),
+        }));
+      } else {
+        return this.log.map((log_entry) => ({
+          msg: log_entry.en_msg,
+          time: formatDate(new Date(log_entry.timestamp * 1000)),
+        }));
+      }
+    },
+  },
+  mounted() {
+    setInterval(() => {
+      this.get_log();
+    }, 1000);
   },
 };
 </script>
@@ -125,6 +150,23 @@ export default {
         @start="test_av_test()"
       ></Test>
     </div>
+    <div class="test-block-container">
+      <div class="title">
+        <span> Лог </span>
+        <div class="language-button">
+          <span>Русский: </span>
+          <ToggleSwitch v-model="russian_language"></ToggleSwitch>
+        </div>
+      </div>
+      <div class="log">
+        <div class="log-entry" v-for="log_entry in logByLanguage">
+          <span class="date">{{ log_entry.time }}</span>
+          <span class="message">
+            {{ log_entry.msg }}
+          </span>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -146,8 +188,47 @@ export default {
 }
 
 .test-block-container .title {
+  width: 100%;
   font-weight: 500;
   font-size: 24px;
   margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.log {
+  max-height: 15rem;
+  height: 15rem;
+  overflow-y: auto;
+  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+.log-entry {
+  padding: 0.4rem;
+  width: 100%;
+  background-color: #2a2a2a;
+  border-radius: 0.4rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.log-entry .date {
+  color: #898989;
+  font-weight: 300;
+}
+
+.log-entry .message {
+  user-select: text;
+}
+
+.language-button {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  gap: 0.5rem;
 }
 </style>
