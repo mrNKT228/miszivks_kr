@@ -1,11 +1,16 @@
-use std::{fs::File, io::Write, path::Path};
+use std::{
+  fs::File,
+  io::{Read, Write},
+  path::Path,
+  thread,
+  time::Duration,
+};
 
 use directories::UserDirs;
 
 use crate::logger::{add_log, add_log_str, get_timestamp};
 
-const EICAR: &[u8; 70] =
-  b"\"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\"";
+const EICAR: &[u8; 68] = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
 
 #[tauri::command]
 pub fn test_av_test() -> String {
@@ -23,7 +28,11 @@ pub fn test_av_test() -> String {
           ),
         );
         match inject_eicar(path) {
-          Ok(_) => return "enabled".to_owned(),
+          Ok(path) => match check_eicar(path) {
+            Ok(_) => return "enabled".to_owned(),
+
+            Err(_) => return "disabled".to_owned(),
+          },
           Err(_) => return "disabled".to_owned(),
         }
       }
@@ -43,12 +52,11 @@ pub fn test_av_test() -> String {
       return "failed".to_owned();
     }
   }
-  "enabled".to_owned()
 }
 
-pub fn inject_eicar(path: &Path) -> Result<(), ()> {
+fn inject_eicar(path: &Path) -> Result<String, ()> {
   let timestamp = get_timestamp();
-  let path = path.join(format!("eicar_test_file_{}.txt", timestamp));
+  let path = path.join(format!("eicar_test_file_{}.com", timestamp));
 
   if path.exists() {
     add_log(
@@ -77,7 +85,7 @@ pub fn inject_eicar(path: &Path) -> Result<(), ()> {
             path.to_str().unwrap()
           ),
         );
-        Ok(())
+        Ok(path.to_str().unwrap().to_owned())
       }
       Err(error) => {
         add_log(
@@ -109,6 +117,41 @@ pub fn inject_eicar(path: &Path) -> Result<(), ()> {
         ),
       );
       Err(())
+    }
+  }
+}
+
+fn check_eicar(path: String) -> Result<(), ()> {
+  let path = Path::new(&path);
+
+  thread::sleep(Duration::from_secs(2));
+
+  match File::open(path) {
+    Ok(mut file) => {
+      let mut buf: Vec<u8> = Vec::new();
+      match file.read_to_end(&mut buf) {
+        Ok(read_bytes) => {
+          add_log(
+            format!("Read from EICAR file: {} bytes", read_bytes),
+            format!("Прочитано байт из файла EICAR: {}", read_bytes),
+          );
+          Err(())
+        }
+        Err(error) => {
+          add_log(
+            format!("Read from EICAR file error: {}", error),
+            format!("Ошибка чтения из файла EICAR: {}", error),
+          );
+          Ok(())
+        }
+      }
+    }
+    Err(error) => {
+      add_log(
+        format!("Open EICAR file error: {}", error),
+        format!("Ошибка открытия файла EICAR: {}", error),
+      );
+      Ok(())
     }
   }
 }
